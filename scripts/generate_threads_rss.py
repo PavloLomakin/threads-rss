@@ -92,10 +92,23 @@ def generate_rss(posts):
 
 
 def main():
-    html = fetch_threads_profile_html()
-    posts = parse_posts_from_html(html)
-    generate_rss(posts)
-    print(f"RSS сгенерирован: {OUTPUT_PATH} ({len(posts)} постов)")
+    try:
+        html = fetch_threads_profile_html()
+        print("✅ HTML получен")
+
+        posts = parse_posts_from_html(html)
+        print(f"✅ Найдено постов: {len(posts)}")
+
+        if not posts:
+            print("⚠️ Посты не найдены — возможно, структура Threads изменилась или профиль пустой.")
+            return
+
+        generate_rss(posts)
+        print(f"✅ RSS сгенерирован: {OUTPUT_PATH}")
+
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+
 
 
 if __name__ == "__main__":
