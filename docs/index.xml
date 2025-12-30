@@ -6,13 +6,13 @@
     <description>RSS лента постов Threads @pavlo.lomakin</description>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 30 Dec 2025 18:56:48 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 30 Dec 2025 19:23:06 +0000</lastBuildDate>
     <item>
       <title>No posts found</title>
       <link>https://www.threads.net/@pavlo.lomakin</link>
       <description>Threads did not return any readable content.</description>
-      <guid isPermaLink="false">https://www.threads.net/@pavlo.lomakin#2025-12-30T18:56:48.694731+00:00</guid>
-      <pubDate>Tue, 30 Dec 2025 18:56:48 +0000</pubDate>
+      <guid isPermaLink="false">https://www.threads.net/@pavlo.lomakin#2025-12-30T19:23:06.781355+00:00</guid>
+      <pubDate>Tue, 30 Dec 2025 19:23:06 +0000</pubDate>
     </item>
   </channel>
 </rss>
