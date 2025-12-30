@@ -2,8 +2,8 @@ name: Generate Threads RSS
 
 on:
   schedule:
-    - cron: "0 * * * *"   # запуск каждый час
-  workflow_dispatch:       # возможность запускать вручную
+    - cron: "0 * * * *"   # раз в час
+  workflow_dispatch:       # можно запускать вручную
 
 jobs:
   build:
@@ -29,10 +29,21 @@ jobs:
         run: |
           python scripts/generate_threads_rss.py
 
+      - name: List docs folder
+        run: |
+          echo "📂 Содержимое docs/:"
+          ls -R .
+          ls -R docs || echo "⚠️ Папка docs не найдена"
+
+      - name: Show RSS file
+        run: |
+          echo "📄 Содержимое docs/index.xml (если есть):"
+          cat docs/index.xml || echo "⚠️ Файл docs/index.xml не найден"
+
       - name: Commit and push RSS
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.xml
+          git add docs/index.xml || echo "нет файла docs/index.xml"
           git commit -m "chore: refresh Threads RSS feed" || echo "No changes to commit"
-          git push
+          git push || echo "No changes to push"
