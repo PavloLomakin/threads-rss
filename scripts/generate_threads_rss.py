@@ -23,28 +23,52 @@ def fetch_threads_profile_html():
     resp.raise_for_status()
     return resp.text
 
+
 def parse_posts_from_html(html):
     soup = BeautifulSoup(html, "html.parser")
     posts = []
 
-    for idx, meta in enumerate(soup.find_all("meta", attrs={"property": "og:description"})):
-        content = meta.get("content", "").strip()
-        if not content:
+    # Каждый пост начинается с большого блока div.x1a6qonq
+    for post_block in soup.find_all("div", class_="x1a6qonq"):
+        # 1) Собираем текст поста
+        text_parts = post_block.find_all("span")
+        full_text = "\n".join(
+            span.get_text(strip=True)
+            for span in text_parts
+            if span.get_text(strip=True)
+        )
+
+        if not full_text:
             continue
 
-        post_url = BASE_URL
+        # 2) Ищем ссылку на пост
+        link_tag = post_block.find("a", href=True)
+        if link_tag:
+            post_url = "https://www.threads.net" + link_tag["href"]
+        else:
+            post_url = BASE_URL
+
+        # 3) Ищем дату публикации
+        time_tag = post_block.find("time")
+        if time_tag and time_tag.has_attr("datetime"):
+            pub_date = datetime.fromisoformat(
+                time_tag["datetime"].replace("Z", "+00:00")
+            )
+        else:
+            pub_date = datetime.now(timezone.utc)
 
         posts.append({
-            "title": content[:80] + ("..." if len(content) > 80 else ""),
-            "description": content,
+            "title": full_text[:80] + ("..." if len(full_text) > 80 else ""),
+            "description": full_text,
             "link": post_url,
-            "pub_date": datetime.now(timezone.utc),
+            "pub_date": pub_date,
         })
 
         if len(posts) >= MAX_ITEMS:
             break
 
     return posts
+
 
 def generate_rss(posts):
     fg = FeedGenerator()
@@ -66,11 +90,13 @@ def generate_rss(posts):
     with open(OUTPUT_PATH, "wb") as f:
         f.write(rss_str)
 
+
 def main():
     html = fetch_threads_profile_html()
     posts = parse_posts_from_html(html)
     generate_rss(posts)
     print(f"RSS сгенерирован: {OUTPUT_PATH} ({len(posts)} постов)")
+
 
 if __name__ == "__main__":
     main()
