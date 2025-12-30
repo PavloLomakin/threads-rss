@@ -26,37 +26,54 @@ def fetch_threads_profile_html():
     return resp.text
 
 
+import json
+
 def parse_posts_from_html(html):
     soup = BeautifulSoup(html, "html.parser")
-    posts = []
 
-    # Threads меняет классы → собираем ВСЕ <span> с текстом
-    candidate_spans = soup.find_all("span")
-    text_chunks = []
-
-    for span in candidate_spans:
-        text = span.get_text(strip=True)
-        if text and len(text) > 20:  # фильтр от мусора
-            text_chunks.append(text)
-
-    print(f"🔍 Найдено текстовых блоков: {len(text_chunks)}")
-
-    if not text_chunks:
-        print("⚠️ Не найдено ни одного текстового блока")
+    # 1. Find the embedded JSON
+    script_tag = soup.find("script", id="__NEXT_DATA__")
+    if not script_tag:
+        print("❌ JSON script tag not found")
         return []
 
-    # Склеиваем в один большой пост (RSS всё равно читает как ленту)
-    full_text = "\n".join(text_chunks[:MAX_ITEMS])
+    try:
+        data = json.loads(script_tag.string)
+    except Exception as e:
+        print(f"❌ Failed to parse JSON: {e}")
+        return []
 
-    posts.append({
-        "title": full_text[:80] + ("..." if len(full_text) > 80 else ""),
-        "description": full_text,
-        "link": BASE_URL,
-        "pub_date": datetime.now(timezone.utc),
-    })
+    # 2. Navigate to posts inside the JSON
+    try:
+        posts_data = (
+            data["props"]["pageProps"]["userProfile"]["posts"]
+        )
+    except KeyError:
+        print("❌ Posts not found in JSON structure")
+        return []
 
-    print(f"📊 Итог: постов для RSS: {len(posts)}")
+    posts = []
+    for post in posts_data[:MAX_ITEMS]:
+        text = post.get("caption", "")
+        post_id = post.get("id")
+        timestamp = post.get("taken_at")
+
+        if not text:
+            continue
+
+        # Convert timestamp → datetime
+        pub_date = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
+        posts.append({
+            "title": text[:80] + ("..." if len(text) > 80 else ""),
+            "description": text,
+            "link": f"{BASE_URL}/post/{post_id}",
+            "pub_date": pub_date,
+        })
+
+    print(f"📊 Parsed posts from JSON: {len(posts)}")
     return posts
+
 
 
 def generate_rss(posts):
